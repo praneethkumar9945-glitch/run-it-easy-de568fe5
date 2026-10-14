@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, Check, ChevronLeft, ChevronRight, ImagePlus, LoaderCircle, MapPin, SlidersHorizontal, Trash2, Upload, Users, X, Clapperboard, CircleDashed, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Check, ChevronLeft, ChevronRight, ImagePlus, LoaderCircle, MapPin, SlidersHorizontal, Trash2, Upload, Users, X, Clapperboard, CircleDashed, ShieldCheck } from 'lucide-react';
 import postPhoto from '@/assets/story-gallery.jpg.asset.json';
 import reelPhoto from '@/assets/ev-athletics.jpg.asset.json';
 import storyPhoto from '@/assets/story-college.jpg.asset.json';
@@ -13,6 +13,7 @@ import { useAccount } from '@/lib/account';
 import { supabase } from '@/integrations/supabase/client';
 import { filterValues, mediaLimits, preparePhoto, validateMedia, type MediaFilter, type SocialKind } from '@/lib/social-media';
 import { StoryEditor, StoryLayers, useStoryEditor } from './StoryEditor';
+import { CreatorHeader } from './CreatorHeader';
 
 type Media = { file: File; url: string; filter: MediaFilter };
 export function SocialComposer({ kind, onClose, onBack }: { kind: SocialKind; onClose: () => void; onBack: () => void }) {
@@ -60,11 +61,9 @@ export function SocialComposer({ kind, onClose, onBack }: { kind: SocialKind; on
     } finally { setBusy(false); }
   };
   return <div className={`social-composer ${kind === 'Story' ? 'is-story' : ''}`}>
-    <header className="social-composer-header">
-      <Button variant="ghost" size="icon" aria-label="Back" disabled={busy} onClick={() => step ? setStep(step - 1) : onBack()}><ArrowLeft /></Button>
-      <div className="text-center"><h2 className="text-base font-semibold">New {kind.toLowerCase()}</h2><p className="text-xs text-muted-foreground">{['Choose media', 'Edit media', 'Ready to share'][step]}</p></div>
+    <CreatorHeader title={`New ${kind.toLowerCase()}`} subtitle={['Choose media', 'Edit media', 'Ready to share'][step] ?? ''} busy={busy} onBack={() => step ? setStep(step - 1) : onBack()}>
       {step === 2 ? <Button onClick={share} disabled={busy}>{busy ? <LoaderCircle className="animate-spin" /> : <Check />}{busy ? 'Sharing' : 'Share'}</Button> : <Button onClick={() => setStep(step + 1)} disabled={!media.length}>Next<ArrowRight /></Button>}
-    </header>
+    </CreatorHeader>
     <nav className="social-progress-nav" aria-label="Creation steps">{['Media', 'Edit', 'Share'].map((label, value) => <Button key={label} variant="ghost" className={value === step ? 'is-active' : ''} disabled={busy || value > step} aria-current={value === step ? 'step' : undefined} onClick={() => setStep(value)}><span>{value < step ? <Check /> : `0${value + 1}`}</span>{label}</Button>)}</nav>
     <input ref={picker} type="file" className="sr-only" aria-label={`Upload ${kind.toLowerCase()} media`} accept={kind === 'Post' ? 'image/*' : kind === 'Reel' ? 'video/*' : 'image/*,video/*'} multiple={kind === 'Post'} onChange={e => { pick(Array.from(e.target.files ?? [])); e.target.value = ''; }} />
     {step === 0 ? <div className={`social-dropzone ${dragging ? 'is-dragging' : ''}`} onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); pick(Array.from(e.dataTransfer.files)); }}>

@@ -3,6 +3,6 @@
 - [x] Restore accounts, content, storage, and access rules in Cloud.
 - [x] Add original media-first Post, Reel, and Story creation.
 - [x] Verify authenticated photo/story upload/share/readback.
-- [ ] Upgrade the profile Create menu and Post, Reel, Story, Ticket, Tweet, Event, and News forms.
-- [ ] Verify all creation forms and authenticated sharing on phone and desktop.
+- [ ] Match every profile Create form to the shared Instagram-style layout while preserving domain fields.
+- [ ] Verify creation forms and live previews while signed in.
 - [ ] Existing records, users, and uploaded files: blocked by missing exports.
