@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { X, Send, LoaderCircle, ImagePlus, Plus, BarChart3 } from 'lucide-react';
+import { X, Check, LoaderCircle, ImagePlus, Plus, BarChart3, SlidersHorizontal, ChevronRight, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { ContentPreview } from './ContentPreview';
+import { CreatorHeader } from './CreatorHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -42,11 +43,12 @@ const mediaRule: Partial<Record<CreateKind, { accept: string; multiple: boolean;
 };
 const MAX_MB = 50;
 
-export function Composer({ kind, onClose }: { kind: CreateKind; onClose: () => void }) {
+export function Composer({ kind, onClose, onBack }: { kind: CreateKind; onClose: () => void; onBack: () => void }) {
   const { user, accountType, profile } = useAccount(); const queries = useQueryClient(); const content = useCommunityContent();
   const [values, setValues] = useState<Record<string, string>>({});
   const [files, setFiles] = useState<File[]>([]); const [busy, setBusy] = useState(false); const [error, setError] = useState('');
   const [text, setText] = useState(''); const [paid, setPaid] = useState(false); const [poll, setPoll] = useState<string[]>([]);
+  const [advanced, setAdvanced] = useState(false);
   const rule = mediaRule[kind];
   const previews = useMemo(() => files.map(f => ({ url: URL.createObjectURL(f), video: f.type.startsWith('video/') })), [files]);
   useEffect(() => () => previews.forEach(p => URL.revokeObjectURL(p.url)), [previews]);
@@ -102,8 +104,14 @@ export function Composer({ kind, onClose }: { kind: CreateKind; onClose: () => v
   const captionLabel = { Post: 'Caption', Reel: 'Caption', Story: 'Text on story', Tweet: "What's happening?", News: 'Full story', Event: 'Description', Ticket: 'Ticket description' }[kind];
   const textRequired = kind === 'Tweet' || kind === 'News' || kind === 'Event';
 
-  return <form onSubmit={submit} onChange={e => { const data = new FormData(e.currentTarget); setValues(Object.fromEntries(Array.from(data.entries()).filter((entry): entry is [string, string] => typeof entry[1] === 'string'))); }} className="domain-composer">
-    <div className="domain-form-column">
+  return <form onSubmit={submit} onChange={e => { const data = new FormData(e.currentTarget); setValues(Object.fromEntries(Array.from(data.entries()).filter((entry): entry is [string, string] => typeof entry[1] === 'string'))); }} className="social-composer domain-composer">
+    <CreatorHeader title={`New ${kind.toLowerCase()}`} subtitle="Ready to share" busy={busy} onBack={onBack}>
+      <Button type="submit" disabled={busy || (kind === 'Ticket' && !ownEvents.length)}>{busy ? <LoaderCircle className="animate-spin" /> : <Check />}{busy ? 'Sharing' : 'Share'}</Button>
+    </CreatorHeader>
+    <div className="social-composer-body domain-composer-body">
+    <ContentPreview kind={kind} values={values} text={text} image={previews[0]?.url} name={profile?.full_name || 'You'}/>
+    <div className="social-settings-column domain-form-column">
+    <div className="flex items-center gap-3"><span className="studio-avatar">{(profile?.full_name || 'You').slice(0, 1).toUpperCase()}</span><div className="min-w-0"><p className="truncate text-sm font-semibold">{profile?.full_name || 'You'}</p><p className="text-xs text-muted-foreground">Your {kind.toLowerCase()}</p></div></div>
     {rule && <Section title="Media">
       <Field label={rule.label} hint={`Max ${MAX_MB} MB per file`} wide>
         <span className="domain-media-picker"><ImagePlus className="size-6 text-primary"/><Input type="file" aria-label={rule.label} accept={rule.accept} multiple={rule.multiple} className="mt-1" onChange={e => { pickFiles(Array.from(e.target.files ?? [])); e.target.value = ''; }} /></span>
@@ -171,15 +179,16 @@ export function Composer({ kind, onClose }: { kind: CreateKind; onClose: () => v
       <Toggle name="refundable" label="Refundable" defaultChecked={false} />
     </Section>}
 
-    {kind !== 'Ticket' && <Section title="Settings">
+    {kind !== 'Ticket' && <><Button type="button" variant="ghost" className="studio-advanced-trigger" aria-expanded={advanced} onClick={() => setAdvanced(!advanced)}><SlidersHorizontal />Advanced settings<ChevronRight className={advanced ? 'ml-auto rotate-90' : 'ml-auto'} /></Button><div hidden={!advanced}><Section title="Settings">
       <Toggle name="comments" label="Allow comments" />
       <Toggle name="hide_likes" label="Hide like count" defaultChecked={false} />
       {kind === 'Reel' && <Toggle name="remix" label="Allow remixes" />}
       {kind === 'Tweet' && <Field label="Who can reply"><select name="reply" className={selectCls}><option value="everyone">Everyone</option><option value="following">People you follow</option><option value="mentioned">Only mentioned</option></select></Field>}
-    </Section>}
+    </Section></div></>}
 
     </div>
-    <ContentPreview kind={kind} values={values} text={text} image={previews[0]?.url} name={profile?.full_name || 'You'}/>
-    <footer className="domain-composer-footer">{error ? <p role="alert" className="text-sm text-destructive">{error}</p> : <span className="text-xs text-muted-foreground">{kind === 'Ticket' ? 'Ticket details' : 'Publishing to your community'}</span>}<Button type="submit" disabled={busy || (kind === 'Ticket' && !ownEvents.length)}>{busy ? <LoaderCircle className="animate-spin"/> : <Send/>}{busy ? 'Publishing…' : `Publish ${kind.toLowerCase()}`}</Button></footer>
+    </div>
+    {error && <p role="alert" className="border-t border-border px-5 py-3 text-sm text-destructive">{error}</p>}
+    <footer className="social-composer-footer"><span className="flex items-center gap-2 text-xs text-muted-foreground" role="status"><ShieldCheck className="size-4" />{busy ? 'Sharing…' : `New ${kind.toLowerCase()}`}</span><Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={busy}><X />Cancel</Button></footer>
   </form>;
 }
