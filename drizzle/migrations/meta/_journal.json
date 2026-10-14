@@ -15,6 +15,13 @@
       "when": 1791951260045,
       "tag": "0001_apply_pending",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791952717241,
+      "tag": "0002_probe",
+      "breakpoints": true
     }
   ]
 }
